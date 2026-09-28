@@ -51,7 +51,7 @@ const parties = [
         popularity: "0.001% (Underground)",
         scamLevel: "Pest Control",
         isFavored: false,
-        memeImage: "assets/images/cjp.jpg",
+        memeImage: "assets/images/cjpmeme.jpg",
         voteSound: "assets/sounds/is-sajjan-ko-kya-takleef-hai-bhai.mp3",
         memeText: "GENDU GENERATION HAI SACH ME"
     }
