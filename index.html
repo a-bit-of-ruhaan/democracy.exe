@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Democracy Simulator™</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-particles"></div>
+    <div class="disclaimer">FICTIONAL PARODY — NOT A REAL VOTING SYSTEM</div>
+    
+    <header>
+        <h1>DEMOCRACY SIMULATOR™</h1>
+        <p class="subtitle">Because apparently democracy needed a UI update.</p>
+    </header>
+
+    <main id="app-container">
+        <section id="parties-grid" class="parties-grid">
+            <!-- Party cards will be injected here via JS -->
+        </section>
+        
+        <section id="results-dashboard" class="results-dashboard hidden">
+            <h2>ELECTION RESULTS</h2>
+            <div class="dashboard-stats">
+                <div class="stat-card">
+                    <span class="stat-label">TOTAL VOTES</span>
+                    <span class="stat-value" id="stat-total">1,284,392</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">ACTUAL USERS</span>
+                    <span class="stat-value" id="stat-users">1</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">MATHEMATICS</span>
+                    <span class="stat-value error-text">ERROR</span>
+                </div>
+                <div class="stat-card full-width">
+                    <span class="stat-label">DEMOCRACY STATUS</span>
+                    <span class="stat-value glitch-text" id="stat-status">RECALCULATING...</span>
+                </div>
+            </div>
+            <button id="reset-btn" class="btn primary-btn">REBOOT DEMOCRACY</button>
+        </section>
+    </main>
+
+    <!-- Modals -->
+    <div id="modal-overlay" class="modal-overlay hidden">
+        <div id="modal-content" class="modal-content glass-panel">
+            <!-- Modal content injected via JS -->
+        </div>
+    </div>
+
+    <!-- Media Placeholders Container -->
+    <div id="media-container" class="media-container hidden">
+        <img id="meme-image" src="" alt="Meme Placeholder" class="hidden">
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Confetti Container -->
+    <div id="confetti-container" class="confetti-container"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
