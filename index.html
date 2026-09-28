@@ -1,48 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Democracy Simulator™</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body>
     <div class="background-particles"></div>
     <div class="disclaimer">FICTIONAL PARODY — NOT A REAL VOTING SYSTEM</div>
-    
+
     <header>
         <h1>DEMOCRACY SIMULATOR™</h1>
-        <p class="subtitle">Because apparently democracy needed a UI update.</p>
+        <p class="subtitle">100% Fair and Honest Voting.</p>
     </header>
 
     <main id="app-container">
         <section id="parties-grid" class="parties-grid">
             <!-- Party cards will be injected here via JS -->
         </section>
-        
-        <section id="results-dashboard" class="results-dashboard hidden">
-            <h2>ELECTION RESULTS</h2>
-            <div class="dashboard-stats">
-                <div class="stat-card">
-                    <span class="stat-label">TOTAL VOTES</span>
-                    <span class="stat-value" id="stat-total">1,284,392</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-label">ACTUAL USERS</span>
-                    <span class="stat-value" id="stat-users">1</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-label">MATHEMATICS</span>
-                    <span class="stat-value error-text">ERROR</span>
-                </div>
-                <div class="stat-card full-width">
-                    <span class="stat-label">DEMOCRACY STATUS</span>
-                    <span class="stat-value glitch-text" id="stat-status">RECALCULATING...</span>
-                </div>
-            </div>
-            <button id="reset-btn" class="btn primary-btn">REBOOT DEMOCRACY</button>
-        </section>
+
+
     </main>
 
     <!-- Modals -->
@@ -52,9 +34,26 @@
         </div>
     </div>
 
-    <!-- Media Placeholders Container -->
-    <div id="media-container" class="media-container hidden">
+    <!-- Captcha Modal Overlay -->
+    <div id="captcha-overlay" class="modal-overlay hidden">
+        <div class="modal-content glass-panel captcha-panel">
+            <h3 class="modal-title">SECURITY CHECK</h3>
+            <p class="modal-body">Select all tiles containing <strong>Empty Promises</strong> to proceed.</p>
+            <div class="captcha-grid">
+                <div class="captcha-box" onclick="this.classList.toggle('selected')"><i class="fa-solid fa-bridge captcha-icon"></i><br>Completed Bridge</div>
+                <div class="captcha-box" onclick="this.classList.toggle('selected')"><i class="fa-solid fa-money-bill-wave captcha-icon"></i><br>₹15 Lakhs</div>
+                <div class="captcha-box" onclick="this.classList.toggle('selected')"><i class="fa-solid fa-road captcha-icon"></i><br>Pothole-free Road</div>
+                <div class="captcha-box" onclick="this.classList.toggle('selected')"><i class="fa-solid fa-user-graduate captcha-icon"></i><br>2 Crore Jobs</div>
+            </div>
+            <button class="btn primary-btn" style="margin-top: 1rem;" onclick="verifyCaptcha()">VERIFY I AM A CITIZEN</button>
+        </div>
+    </div>
+
+    <!-- Final Outcome Container -->
+    <div id="media-container" class="media-container hidden glass-panel">
+        <h2 id="meme-text" class="meme-text"></h2>
         <img id="meme-image" src="" alt="Meme Placeholder" class="hidden">
+        <button id="reset-btn" class="btn primary-btn">REBOOT DEMOCRACY</button>
     </div>
 
     <!-- Toast Notifications -->
@@ -65,4 +64,5 @@
 
     <script src="script.js"></script>
 </body>
+
 </html>

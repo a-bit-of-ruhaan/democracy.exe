@@ -1,6 +1,5 @@
 // --- Configuration & Placeholders ---
-const memeImage = ""; // e.g., "assets/images/meme.png"
-const voteSound = ""; // e.g., "assets/sounds/success.mp3"
+// Note: meme images and vote sounds are now handled per-party.
 
 // --- Data Structures ---
 const parties = [
@@ -12,7 +11,10 @@ const parties = [
         desc: "Lawden Bhojyam For Win. We fix bridges with cello tape.",
         popularity: "99.9% (EVM Adjusted)",
         scamLevel: "World Class",
-        isFavored: true
+        isFavored: true,
+        memeImage: "assets/images/bjpmeme.jpg",
+        voteSound: "assets/sounds/modi-sab-changasi.mp3",
+        memeText: "SAB CHANGA SI MITTRON"
     },
     {
         id: "ncf",
@@ -22,7 +24,10 @@ const parties = [
         desc: "Mandatory chai break every 15 minutes. Youth leader since 1947.",
         popularity: "0.01% (Family Included)",
         scamLevel: "Vintage",
-        isFavored: false
+        isFavored: false,
+        memeImage: "assets/images/bjp.jpg",
+        voteSound: "assets/sounds/lavden-bhojyam.mp3",
+        memeText: "LAWDEN BHOJYAM"
     },
     {
         id: "ddl",
@@ -32,7 +37,10 @@ const parties = [
         desc: "Bhai rule the world. Driving skills not included.",
         popularity: "0.05% (Box Office)",
         scamLevel: "Blockbuster",
-        isFavored: false
+        isFavored: false,
+        memeImage: "assets/images/sjp.jpg",
+        voteSound: "assets/sounds/modi-ji-bkl.mp3",
+        memeText: "BKL, Tu single Hi Marega"
     },
     {
         id: "umr",
@@ -42,8 +50,19 @@ const parties = [
         desc: "CUCKS will rule the Cockroaches. Nuclear winter survivalists.",
         popularity: "0.001% (Underground)",
         scamLevel: "Pest Control",
-        isFavored: false
+        isFavored: false,
+        memeImage: "assets/images/cjp.jpg",
+        voteSound: "assets/sounds/is-sajjan-ko-kya-takleef-hai-bhai.mp3",
+        memeText: "GENDU GENERATION HAI SACH ME"
     }
+];
+
+const confirmationQuestions = [
+    "Are you sure you want to vote for the <strong>{party}</strong>?",
+    "Do you really wanna vote them?",
+    "Are you absolutely sure about this decision?",
+    "Think about the consequences! Still want to proceed?",
+    "Final warning: Are you 100% positive?"
 ];
 
 const funnyRejections = [
@@ -78,27 +97,51 @@ const randomInterferences = [
 // --- DOM Elements ---
 const partiesGrid = document.getElementById("parties-grid");
 const modalOverlay = document.getElementById("modal-overlay");
+const captchaOverlay = document.getElementById("captcha-overlay");
 const modalContent = document.getElementById("modal-content");
 const toastContainer = document.getElementById("toast-container");
 const confettiContainer = document.getElementById("confetti-container");
-const resultsDashboard = document.getElementById("results-dashboard");
 const resetBtn = document.getElementById("reset-btn");
+const memeTextElement = document.getElementById("meme-text");
 const mediaContainer = document.getElementById("media-container");
 const memeImgElement = document.getElementById("meme-image");
 
+const fundsCounter = document.getElementById("funds-counter");
+const dictatorToggle = document.getElementById("dictator-toggle");
+
 let audioPlayer = null;
+let selectedPartyForVote = null;
 
 // --- Initialization ---
 function init() {
     renderParties();
     setupResetBtn();
-    
+
     // Start random interferences
     setInterval(() => {
-        if (!resultsDashboard.classList.contains("hidden")) return;
+        if (!mediaContainer.classList.contains("hidden")) return;
         const msg = randomInterferences[Math.floor(Math.random() * randomInterferences.length)];
         showToast("BREAKING NEWS: " + msg);
     }, 12000);
+
+    // Start Live Funds Counter
+    setInterval(() => {
+        let current = parseInt(fundsCounter.innerText.replace(/,/g, ''));
+        current += Math.floor(Math.random() * 500000) + 10000;
+        fundsCounter.innerText = current.toLocaleString();
+    }, 800);
+
+    // Dictator Mode Listener
+    dictatorToggle.addEventListener("change", (e) => {
+        if (e.target.checked) {
+            document.body.classList.add("dictator-active");
+            showToast("DICTATOR MODE ENGAGED. Dissent is now disabled.");
+            playGlitchSound();
+        } else {
+            document.body.classList.remove("dictator-active");
+            showToast("Democracy restored... for now.");
+        }
+    });
 }
 
 // --- Render Functions ---
@@ -107,6 +150,7 @@ function renderParties() {
     parties.forEach(party => {
         const card = document.createElement("div");
         card.className = "party-card glass-panel";
+        card.setAttribute("data-id", party.id);
         const imgContent = party.image
             ? `<img src="${party.image}" alt="${party.name}" class="party-image">`
             : `<div class="party-image-placeholder">No Image</div>`;
@@ -122,7 +166,7 @@ function renderParties() {
             </div>
             <div class="card-actions">
                 <button class="btn vote-btn" onclick="handleVoteClick('${party.id}')">VOTE</button>
-                <button class="btn bribe-btn" onclick="handleBribeClick('${party.name}')">💰 BRIBE</button>
+                <button class="btn bribe-btn" onclick="handleBribeClick('${party.name}')"><i class="fa-solid fa-sack-dollar"></i> BRIBE</button>
             </div>
         `;
         partiesGrid.appendChild(card);
@@ -131,45 +175,81 @@ function renderParties() {
 
 // --- Interaction Logic ---
 window.handleVoteClick = (partyId) => {
-    const party = parties.find(p => p.id === partyId);
+    selectedPartyForVote = parties.find(p => p.id === partyId);
 
-    if (party.isFavored) {
+    // Open Captcha First
+    captchaOverlay.classList.remove("hidden");
+};
+
+window.verifyCaptcha = () => {
+    // Doesn't matter what they selected, always fail the first time if we wanted, but let's just accept it
+    captchaOverlay.classList.add("hidden");
+
+    // Reset selected boxes
+    document.querySelectorAll('.captcha-box').forEach(box => box.classList.remove('selected'));
+
+    const party = selectedPartyForVote;
+    if (document.body.classList.contains("dictator-active")) {
+        // In dictator mode, force BJP win regardless of what they clicked (though only BJP is visible anyway)
+        const bjp = parties.find(p => p.id === "bjp");
+        selectedPartyForVote = bjp;
+        showFavoredModal(bjp);
+    } else if (party.isFavored) {
         showFavoredModal(party);
     } else {
-        showNormalModal(party);
+        showConfirmationModal(0);
     }
 };
 
 window.handleBribeClick = (partyName) => {
+    playChaChingSound();
     const bribeAmounts = ["₹500 and a quarter bottle", "A government contract", "A shiny new toaster", "A ticket to Dubai"];
     const amount = bribeAmounts[Math.floor(Math.random() * bribeAmounts.length)];
+
+    let currentFunds = parseInt(fundsCounter.innerText.replace(/,/g, ''));
+    if (currentFunds > 500000) {
+        fundsCounter.innerText = (currentFunds - 500000).toLocaleString();
+    }
+
     showToast(`Attempting to bribe ${partyName} with ${amount}...`);
-    
+
     setTimeout(() => {
-        showToast(`Bribe successfully accepted by ${partyName}. Morals compromised.`);
+        showToast(`MLAs successfully loaded onto the luxury resort bus.`);
     }, 2000);
 };
 
-function showNormalModal(party) {
+window.showConfirmationModal = (step) => {
+    const party = selectedPartyForVote;
+    if (step >= confirmationQuestions.length) {
+        executeVote();
+        return;
+    }
+
+    playErrorSound();
+    const questionText = confirmationQuestions[step].replace("{party}", party.name);
+
     modalContent.innerHTML = `
-        <h3 class="modal-title">Wait a minute...</h3>
-        <p class="modal-body">Are you sure you want to vote for the <strong>${party.name}</strong>?</p>
+        <h3 class="modal-title">Wait a minute... (Question ${step + 1}/5)</h3>
+        <p class="modal-body">${questionText}</p>
         <div class="modal-actions">
+            <button class="btn success-btn" onclick="showConfirmationModal(${step + 1})">YES</button>
             <button class="btn danger-btn" onclick="closeModalAndToast()">NO</button>
-            <button class="btn danger-btn" onclick="closeModalAndToast()">ABSOLUTELY NOT</button>
         </div>
     `;
     openModal();
-}
+};
 
 function showFavoredModal(party) {
+    playSuccessSound();
+    const isDictator = document.body.classList.contains("dictator-active");
+    const btnText = isDictator ? "OBEY" : "YES";
     modalContent.innerHTML = `
         <h3 class="modal-title">Excellent Choice!</h3>
         <p class="modal-body">Would you like to vote for the <strong>${party.name}</strong>?</p>
         <div class="modal-actions">
-            <button class="btn success-btn" onclick="executeFavoredVote()">YES</button>
-            <button class="btn success-btn" onclick="executeFavoredVote()">OF COURSE</button>
-            <button class="btn success-btn" onclick="executeFavoredVote()">HELL YEAH</button>
+            <button class="btn success-btn" onclick="executeVote()">${btnText}</button>
+            <button class="btn success-btn" onclick="executeVote()">${isDictator ? "SUBMIT" : "OF COURSE"}</button>
+            <button class="btn success-btn" onclick="executeVote()">${isDictator ? "SURRENDER" : "HELL YEAH"}</button>
         </div>
     `;
     openModal();
@@ -185,22 +265,7 @@ window.closeModalAndToast = () => {
     showToast(randomMsg);
 };
 
-window.executeFavoredVote = () => {
-    // Play sound if available
-    if (voteSound) {
-        if (!audioPlayer) {
-            audioPlayer = new Audio(voteSound);
-        }
-        audioPlayer.play().catch(e => console.log("Audio play failed (maybe no interaction yet)", e));
-    }
-
-    // Show Image if available
-    if (memeImage) {
-        mediaContainer.classList.remove("hidden");
-        memeImgElement.src = memeImage;
-        memeImgElement.classList.remove("hidden");
-    }
-
+window.executeVote = () => {
     // Start celebration
     modalContent.innerHTML = `
         <h3 class="modal-title">CONGRATULATIONS!</h3>
@@ -236,31 +301,42 @@ function runEscalationSequence() {
     }, 1200);
 }
 
-// --- Results Dashboard ---
+// --- Final Outcome ---
 function showResultsDashboard() {
-    if (memeImage) mediaContainer.classList.add("hidden");
+    if (selectedPartyForVote) {
+        const sound = selectedPartyForVote.voteSound;
+        const img = selectedPartyForVote.memeImage;
+        const text = selectedPartyForVote.memeText;
 
-    resultsDashboard.classList.remove("hidden");
+        mediaContainer.classList.remove("hidden");
+        if (memeTextElement) memeTextElement.innerText = text || "";
 
-    // Funny animation on stats
-    const totalElement = document.getElementById("stat-total");
-    let count = 1284300;
-    const countInterval = setInterval(() => {
-        count += Math.floor(Math.random() * 100);
-        totalElement.innerText = count.toLocaleString();
-    }, 50);
+        // Play sound if available
+        if (sound) {
+            if (!audioPlayer) {
+                audioPlayer = new Audio(sound);
+            } else {
+                audioPlayer.src = sound;
+            }
+            audioPlayer.play().catch(e => console.log("Audio play failed", e));
+        }
 
-    setTimeout(() => {
-        clearInterval(countInterval);
-        totalElement.innerText = "OVER 9000!!!";
-        totalElement.classList.add("glitch-text");
-    }, 3000);
+        // Show Image if available
+        if (img) {
+            memeImgElement.src = img;
+            memeImgElement.classList.remove("hidden");
+        }
+    }
 }
 
 // --- Reset ---
 function setupResetBtn() {
     resetBtn.addEventListener("click", () => {
-        resultsDashboard.classList.add("hidden");
+        mediaContainer.classList.add("hidden");
+        if (audioPlayer) {
+            audioPlayer.pause();
+            audioPlayer.currentTime = 0;
+        }
         partiesGrid.style.display = "grid";
         showToast("Democracy rebooted successfully.");
     });
@@ -271,7 +347,7 @@ function showToast(message) {
     const toast = document.createElement("div");
     toast.className = "toast";
     toast.innerHTML = `
-        <span>⚠️</span>
+        <span><i class="fa-solid fa-triangle-exclamation"></i></span>
         <span>${message}</span>
     `;
     toastContainer.appendChild(toast);
@@ -301,6 +377,48 @@ function shootConfetti() {
             confetti.remove();
         }, 5000);
     }
+}
+
+// --- Sound Synthesizer (No external assets needed) ---
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playTone(freq, type, duration) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration);
+}
+
+function playChaChingSound() {
+    playTone(800, 'sine', 0.1);
+    setTimeout(() => playTone(1200, 'sine', 0.3), 100);
+}
+
+function playErrorSound() {
+    playTone(150, 'sawtooth', 0.4);
+}
+
+function playSuccessSound() {
+    playTone(400, 'sine', 0.1);
+    setTimeout(() => playTone(600, 'sine', 0.1), 100);
+    setTimeout(() => playTone(800, 'sine', 0.2), 200);
+}
+
+function playGlitchSound() {
+    playTone(100, 'square', 0.1);
+    setTimeout(() => playTone(50, 'square', 0.1), 50);
+    setTimeout(() => playTone(300, 'square', 0.2), 100);
 }
 
 // Boot up
